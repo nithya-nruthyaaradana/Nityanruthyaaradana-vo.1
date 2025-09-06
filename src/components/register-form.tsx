@@ -1,3 +1,4 @@
+
 "use client";
 
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -21,7 +22,7 @@ const registerSchema = z.object({
   age: z.coerce.number().min(5, "Age must be at least 5.").max(100, "Age seems incorrect."),
   guardianName: z.string().min(2, "Guardian's name is required."),
   email: z.string().email("Please enter a valid email address."),
-  phone: z.string().min(10, "Please enter a valid phone number."),
+  phone: z.string().regex(/^[0-9\s+-]{10,15}$/, "Please enter a valid phone number."),
 });
 
 export function RegisterForm() {

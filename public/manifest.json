@@ -1,0 +1,21 @@
+{
+  "name": "Nithyanruthya Aradana",
+  "short_name": "Nithyanruthya",
+  "description": "Classical Dance Academy - Preserving the art of traditional Indian dance",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#8b5cf6",
+  "orientation": "portrait-primary",
+  "icons": [
+    {
+      "src": "/favicon.ico",
+      "sizes": "any",
+      "type": "image/x-icon"
+    }
+  ],
+  "categories": ["education", "entertainment", "lifestyle"],
+  "lang": "en",
+  "dir": "ltr"
+}
+

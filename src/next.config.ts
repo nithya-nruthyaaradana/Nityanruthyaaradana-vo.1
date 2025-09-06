@@ -19,14 +19,10 @@ const nextConfig: NextConfig = {
     deviceSizes: [640, 750, 828, 1080, 1200, 1920, 2048, 3840],
     imageSizes: [16, 32, 48, 64, 96, 128, 256, 384],
   },
-  // Disable static generation for all pages
   experimental: {
     optimizePackageImports: ['lucide-react'],
+    // optimizeCss: true, // Disabled due to critters module issue
   },
-  // Disable static optimization completely
-  staticPageGenerationTimeout: 60,
-  // Force all pages to be dynamic
-  trailingSlash: false,
   compiler: {
     removeConsole: process.env.NODE_ENV === 'production',
   },

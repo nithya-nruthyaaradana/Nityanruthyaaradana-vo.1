@@ -1,9 +1,9 @@
 import type { Metadata } from "next";
-import { Inter } from "next/font/google";
+import { Literata } from "next/font/google";
 import "./globals.css";
 import { Toaster } from "@/components/ui/toaster";
 
-const inter = Inter({ subsets: ["latin"] });
+const literata = Literata({ subsets: ["latin"], display: 'swap' });
 
 export const metadata: Metadata = {
   title: "Nithyanruthyaaradana - Classical Dance Academy",
@@ -67,7 +67,7 @@ export default function RootLayout({
         <link rel="icon" href="/favicon.ico" />
         <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
         <link rel="manifest" href="/manifest.json" />
-        <meta name="theme-color" content="#7c3aed" />
+        <meta name="theme-color" content="#8B0000" />
         <meta name="viewport" content="width=device-width, initial-scale=1" />
         
         {/* Preload critical resources */}
@@ -104,7 +104,7 @@ export default function RootLayout({
           }}
         />
       </head>
-      <body className={inter.className}>
+      <body className={literata.className}>
         {children}
         <Toaster />
       </body>

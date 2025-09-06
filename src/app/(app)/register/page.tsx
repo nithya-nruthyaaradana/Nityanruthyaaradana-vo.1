@@ -13,6 +13,9 @@ import {
 import { RegisterForm } from "@/components/register-form";
 import { ArrowRight, CheckCircle, Users, Award, Clock } from "lucide-react";
 
+// Prevent prerendering to avoid build-time errors
+export const dynamic = 'force-dynamic';
+
 const admissionSteps = [
   {
     icon: Users,

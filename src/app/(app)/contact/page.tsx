@@ -1,44 +1,75 @@
+
+'use client';
+
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { 
-  FadeIn, 
-  Slide, 
-  Scale, 
-  StaggerContainer, 
-  StaggerItem, 
-  HoverAnimation, 
+  PageTransition,
   TextAnimation,
-  PageTransition 
+  StaggerContainer,
+  StaggerItem,
+  HoverAnimation,
 } from "@/components/ui/professional-animations";
 import { ContactForm } from "@/components/contact-form";
 import { Mail, Phone, MapPin, Clock } from "lucide-react";
+import { db } from "@/lib/firebase";
+import { doc, getDoc } from "firebase/firestore";
 
-const contactInfo = [
-  {
-    icon: Mail,
-    title: "Email",
-    content: "info@nithyanruthyaaradana.art",
-    link: "mailto:info@nithyanruthyaaradana.art"
-  },
-  {
-    icon: Phone,
-    title: "Phone",
-    content: "+91 123 456 7890",
-    link: "tel:+911234567890"
-  },
-  {
-    icon: MapPin,
-    title: "Address",
-    content: "123 Dance Street, Cultural District, Chennai, Tamil Nadu 600001"
-  },
-  {
-    icon: Clock,
-    title: "Hours",
-    content: "Monday - Saturday: 8:00 AM - 8:00 PM"
-  }
-];
+// Prevent prerendering to avoid Firebase build-time errors
+export const dynamic = 'force-dynamic';
+
+interface SiteSettings {
+  contactEmail: string;
+  contactPhone: string;
+}
 
 export default function ContactPage() {
+  const [settings, setSettings] = useState<SiteSettings | null>(null);
+
+  useEffect(() => {
+    const fetchSettings = async () => {
+      const docRef = doc(db, "settings", "general");
+      const docSnap = await getDoc(docRef);
+
+      if (docSnap.exists()) {
+        setSettings(docSnap.data() as SiteSettings);
+      } else {
+        // Fallback settings
+        setSettings({
+          contactEmail: "info@nithyanruthyaaradana.art",
+          contactPhone: "+91 123 456 7890",
+        });
+      }
+    };
+    fetchSettings();
+  }, []);
+
+  const contactInfo = [
+    {
+      icon: Mail,
+      title: "Email",
+      content: settings?.contactEmail || "Loading...",
+      link: `mailto:${settings?.contactEmail}`
+    },
+    {
+      icon: Phone,
+      title: "Phone",
+      content: settings?.contactPhone || "Loading...",
+      link: `tel:${settings?.contactPhone}`
+    },
+    {
+      icon: MapPin,
+      title: "Address",
+      content: "123 Dance Street, Cultural District, Chennai, Tamil Nadu 600001"
+    },
+    {
+      icon: Clock,
+      title: "Hours",
+      content: "Monday - Saturday: 8:00 AM - 8:00 PM"
+    }
+  ];
+
   return (
     <PageTransition>
       <div>

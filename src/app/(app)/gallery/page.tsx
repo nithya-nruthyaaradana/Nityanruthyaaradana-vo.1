@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useEffect } from 'react';
@@ -5,24 +6,18 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { FallbackImage } from '@/components/ui/fallback-image';
 import { ImageModal } from '@/components/ui/image-modal';
-import { replaceUnsplashUrl } from '@/lib/image-utils';
 import { motion } from 'framer-motion';
+import { db } from '@/lib/firebase';
+import { collection, onSnapshot, query, orderBy } from 'firebase/firestore';
+import { Loader2 } from 'lucide-react';
 
-// Gallery images data
-const galleryImagesData = [
-  { originalSrc: "https://images.unsplash.com/photo-1547153760-180fc612c570?w=600&h=800&fit=crop&crop=center", category: "performance", alt: "Bharatanatyam dancer in dramatic pose on stage", hint: "stage performance", featured: true, categoryLabel: "Performance" },
-  { originalSrc: "https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=600&h=400&fit=crop&crop=center", category: "groupPractice", alt: "Group dance practice session", hint: "group training", featured: false, categoryLabel: "Group Practice" },
-  { originalSrc: "https://images.unsplash.com/photo-1578662996442-48f60103fc96?w=600&h=400&fit=crop&crop=center", category: "training", alt: "Individual dance training", hint: "technique practice", featured: true, categoryLabel: "Training" },
-  { originalSrc: "https://images.unsplash.com/photo-1518837695005-2083093ee35b?w=600&h=400&fit=crop&crop=center", category: "events", alt: "Annual dance performance", hint: "annual show", featured: false, categoryLabel: "Events" },
-  { originalSrc: "https://images.unsplash.com/photo-1547153760-180fc612c570?w=600&h=400&fit=crop&crop=center", category: "performance", alt: "Classical dance performance", hint: "traditional dance", featured: true, categoryLabel: "Performance" },
-  { originalSrc: "https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=600&h=400&fit=crop&crop=center", category: "studentLife", alt: "Students practicing together", hint: "student bonding", featured: false, categoryLabel: "Student Life" },
-  { originalSrc: "https://images.unsplash.com/photo-1578662996442-48f60103fc96?w=600&h=400&fit=crop&crop=center", category: "cultural", alt: "Cultural festival performance", hint: "cultural event", featured: true, categoryLabel: "Cultural Events" },
-  { originalSrc: "https://images.unsplash.com/photo-1518837695005-2083093ee35b?w=600&h=400&fit=crop&crop=center", category: "training", alt: "Advanced technique training", hint: "advanced practice", featured: false, categoryLabel: "Training" },
-  { originalSrc: "https://images.unsplash.com/photo-1547153760-180fc612c570?w=600&h=400&fit=crop&crop=center", category: "performance", alt: "Solo dance performance", hint: "solo show", featured: true, categoryLabel: "Performance" },
-  { originalSrc: "https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=600&h=400&fit=crop&crop=center", category: "groupPractice", alt: "Group choreography practice", hint: "group choreography", featured: false, categoryLabel: "Group Practice" },
-  { originalSrc: "https://images.unsplash.com/photo-1578662996442-48f60103fc96?w=600&h=400&fit=crop&crop=center", category: "studentLife", alt: "Students during break time", hint: "student life", featured: false, categoryLabel: "Student Life" },
-  { originalSrc: "https://images.unsplash.com/photo-1518837695005-2083093ee35b?w=600&h=400&fit=crop&crop=center", category: "cultural", alt: "Traditional dance festival", hint: "traditional festival", featured: true, categoryLabel: "Cultural Events" },
-];
+interface GalleryImage {
+  id: string;
+  src: string;
+  alt: string;
+  category: string;
+  hint?: string;
+}
 
 // Animation variants
 const containerVariants = {
@@ -71,28 +66,26 @@ const heroVariants = {
 export default function GalleryPage() {
   const [selectedImageIndex, setSelectedImageIndex] = useState<number | null>(null);
   const [modalOpen, setModalOpen] = useState(false);
-  const [galleryImages, setGalleryImages] = useState<Array<{
-    src: string;
-    alt: string;
-    hint: string;
-    featured: boolean;
-    category: string;
-  }>>([]);
+  const [galleryImages, setGalleryImages] = useState<GalleryImage[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
 
-  // Process images on component mount
+  // Fetch images from firestore
   useEffect(() => {
-    const processedImages = galleryImagesData.map(item => {
-      const processedSrc = replaceUnsplashUrl(item.originalSrc || 'https://images.unsplash.com/photo-1547153760-180fc612c570', item.category as any);
-      return {
-        src: processedSrc || 'https://picsum.photos/600/400?random=1',
-        alt: item.alt || 'Dance performance image',
-        hint: item.hint || '',
-        featured: item.featured || false,
-        category: item.categoryLabel || 'Performance'
-      };
+    setIsLoading(true);
+    const q = query(collection(db, "gallery"), orderBy("createdAt", "desc"));
+    const unsubscribe = onSnapshot(q, (snapshot) => {
+      const images: GalleryImage[] = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as GalleryImage));
+      setGalleryImages(images.map(img => ({
+          ...img,
+          hint: img.alt // Use alt as hint for modal
+      })));
+      setIsLoading(false);
+    }, (error) => {
+      console.error("Error fetching gallery images: ", error);
+      setIsLoading(false);
     });
-    
-    setGalleryImages(processedImages);
+
+    return () => unsubscribe();
   }, []);
 
   const handleImageClick = (index: number) => {
@@ -104,6 +97,14 @@ export default function GalleryPage() {
     setModalOpen(false);
     setSelectedImageIndex(null);
   };
+
+  if (isLoading) {
+    return (
+        <div className="min-h-screen bg-[#8B0000] flex items-center justify-center">
+            <Loader2 className="h-12 w-12 text-white animate-spin" />
+        </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-[#8B0000]">
@@ -150,7 +151,7 @@ export default function GalleryPage() {
           >
             {galleryImages.map((image, index) => (
               <motion.div
-                key={index}
+                key={image.id}
                 variants={itemVariants}
                 whileHover={{ 
                   scale: 1.05,
@@ -189,7 +190,7 @@ export default function GalleryPage() {
                         <Badge variant="secondary" className="mb-1 text-xs px-2 py-1">
                           {image.category}
                         </Badge>
-                        <p className="text-xs font-medium leading-tight">{image.hint}</p>
+                        <p className="text-xs font-medium leading-tight">{image.alt}</p>
                       </motion.div>
                     </div>
                   </CardContent>

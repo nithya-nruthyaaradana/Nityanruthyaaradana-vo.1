@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useEffect, useRef, useCallback } from 'react';
@@ -49,6 +50,60 @@ export function ImageModal({ isOpen, onClose, images, initialIndex = 0 }: ImageM
   }, [isOpen, initialIndex]);
 
   // Keyboard event handlers
+  const goToPrevious = useCallback(() => {
+    setCurrentIndex((prev) => (prev === 0 ? images.length - 1 : prev - 1));
+    resetView();
+  }, [images.length]);
+
+  const goToNext = useCallback(() => {
+    setCurrentIndex((prev) => (prev === images.length - 1 ? 0 : prev + 1));
+    resetView();
+  }, [images.length]);
+
+  const zoomIn = useCallback(() => {
+    setScale((prev) => Math.min(prev * 1.2, 5));
+  }, []);
+
+  const zoomOut = useCallback(() => {
+    setScale((prev) => Math.max(prev / 1.2, 0.1));
+  }, []);
+
+  const resetView = useCallback(() => {
+    setScale(1);
+    setRotation(0);
+    setPosition({ x: 0, y: 0 });
+  }, []);
+
+  const rotate = useCallback(() => {
+    setRotation((prev) => (prev + 90) % 360);
+  }, []);
+
+  const toggleFullscreen = useCallback(() => {
+    if (!document.fullscreenElement) {
+      modalRef.current?.requestFullscreen();
+    } else {
+      document.exitFullscreen();
+    }
+  }, []);
+
+  const downloadImage = useCallback(async () => {
+    try {
+      const currentImage = images[currentIndex];
+      const response = await fetch(currentImage.src);
+      const blob = await response.blob();
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `dance-image-${currentIndex + 1}.jpg`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      window.URL.revokeObjectURL(url);
+    } catch (error) {
+      console.error('Failed to download image:', error);
+    }
+  }, [images, currentIndex]);
+
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (!isOpen) return;
@@ -103,7 +158,7 @@ export function ImageModal({ isOpen, onClose, images, initialIndex = 0 }: ImageM
 
     document.addEventListener('keydown', handleKeyDown);
     return () => document.removeEventListener('keydown', handleKeyDown);
-  }, [isOpen, currentIndex, scale, rotation, showInfo]);
+  }, [isOpen, currentIndex, scale, rotation, showInfo, downloadImage, goToNext, goToPrevious, resetView, toggleFullscreen, zoomIn, zoomOut]);
 
   // Mouse wheel zoom
   useEffect(() => {
@@ -125,7 +180,7 @@ export function ImageModal({ isOpen, onClose, images, initialIndex = 0 }: ImageM
     return () => {
       document.removeEventListener('wheel', handleWheel);
     };
-  }, [isOpen]);
+  }, [isOpen, zoomIn, zoomOut]);
 
   // Fullscreen change handler
   useEffect(() => {
@@ -136,60 +191,6 @@ export function ImageModal({ isOpen, onClose, images, initialIndex = 0 }: ImageM
     document.addEventListener('fullscreenchange', handleFullscreenChange);
     return () => document.removeEventListener('fullscreenchange', handleFullscreenChange);
   }, []);
-
-  const goToPrevious = useCallback(() => {
-    setCurrentIndex((prev) => (prev === 0 ? images.length - 1 : prev - 1));
-    resetView();
-  }, [images.length]);
-
-  const goToNext = useCallback(() => {
-    setCurrentIndex((prev) => (prev === images.length - 1 ? 0 : prev + 1));
-    resetView();
-  }, [images.length]);
-
-  const zoomIn = useCallback(() => {
-    setScale((prev) => Math.min(prev * 1.2, 5));
-  }, []);
-
-  const zoomOut = useCallback(() => {
-    setScale((prev) => Math.max(prev / 1.2, 0.1));
-  }, []);
-
-  const resetView = useCallback(() => {
-    setScale(1);
-    setRotation(0);
-    setPosition({ x: 0, y: 0 });
-  }, []);
-
-  const rotate = useCallback(() => {
-    setRotation((prev) => (prev + 90) % 360);
-  }, []);
-
-  const toggleFullscreen = useCallback(() => {
-    if (!document.fullscreenElement) {
-      modalRef.current?.requestFullscreen();
-    } else {
-      document.exitFullscreen();
-    }
-  }, []);
-
-  const downloadImage = useCallback(async () => {
-    try {
-      const currentImage = images[currentIndex];
-      const response = await fetch(currentImage.src);
-      const blob = await response.blob();
-      const url = window.URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = `dance-image-${currentIndex + 1}.jpg`;
-      document.body.appendChild(a);
-      a.click();
-      document.body.removeChild(a);
-      window.URL.revokeObjectURL(url);
-    } catch (error) {
-      console.error('Failed to download image:', error);
-    }
-  }, [images, currentIndex]);
 
   // Touch handlers for mobile
   const handleTouchStart = useCallback((e: React.TouchEvent) => {

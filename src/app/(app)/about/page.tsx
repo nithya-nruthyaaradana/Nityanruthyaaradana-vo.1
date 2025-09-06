@@ -1,44 +1,102 @@
+
+'use client';
+
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { 
-  FadeIn, 
-  Slide, 
-  Scale, 
-  StaggerContainer, 
-  StaggerItem, 
-  HoverAnimation, 
+  PageTransition,
   TextAnimation,
-  PageTransition 
+  StaggerContainer,
+  StaggerItem,
+  HoverAnimation,
+  Scale
 } from "@/components/ui/professional-animations";
-import { FallbackImage } from "@/components/ui/fallback-image";
 import Link from "next/link";
-import { ArrowRight, Award, Users, Theater, Heart, Star, GraduationCap, Music } from "lucide-react";
-import { replaceUnsplashUrl } from "@/lib/image-utils";
+import { ArrowRight, Award, Users, Theater, Heart, Star, type LucideIcon } from "lucide-react";
+import { useState, useEffect } from "react";
+import { db } from "@/lib/firebase";
+import { doc, getDoc, collection, query, orderBy, getDocs } from "firebase/firestore";
+import { Loader2 } from "lucide-react";
+import { FallbackImage } from "@/components/ui/fallback-image";
 
-const philosophy = [
-  {
-    icon: Heart,
-    title: "Preservation",
-    description: "We are committed to preserving the authentic traditions and techniques of Bharatanatyam, ensuring that this ancient art form continues to thrive for future generations."
-  },
-  {
-    icon: Users,
-    title: "Community",
-    description: "Our academy fosters a supportive community where students of all ages and backgrounds can learn, grow, and celebrate the rich cultural heritage of Indian classical dance."
-  },
-  {
-    icon: Theater,
-    title: "Excellence",
-    description: "We strive for excellence in every aspect of training, from fundamental techniques to advanced performance skills, maintaining the highest standards of artistic integrity."
-  },
-  {
-    icon: Award,
-    title: "Innovation",
-    description: "While honoring tradition, we embrace innovative teaching methods and contemporary approaches to make classical dance accessible and engaging for modern learners."
-  }
-];
+const iconMap: { [key: string]: LucideIcon } = {
+  Heart,
+  Users,
+  Theater,
+  Award,
+  Star,
+};
+
+interface Philosophy {
+  id: string;
+  icon: string;
+  title: string;
+  description: string;
+}
+
+interface AboutPageContent {
+  storyHeading: string;
+  storyContent: string;
+  storyImageUrl: string;
+  founderHeading: string;
+  founderName: string;
+  founderBio: string;
+  founderImageUrl: string;
+}
 
 export default function AboutPage() {
+  const [pageContent, setPageContent] = useState<AboutPageContent | null>(null);
+  const [philosophy, setPhilosophy] = useState<Philosophy[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchContent = async () => {
+      setIsLoading(true);
+      try {
+        const pageDocRef = doc(db, "pages", "about");
+        const pageDocSnap = await getDoc(pageDocRef);
+
+        if (pageDocSnap.exists()) {
+          setPageContent(pageDocSnap.data() as AboutPageContent);
+        } else {
+          setPageContent({
+            storyHeading: "Our Story",
+            storyContent: "Founded with a deep reverence for the ancient traditions of Bharatanatyam, our academy emerged from a vision to create a nurturing space where the divine art form could flourish. Our journey began with a simple yet profound mission: to preserve and promote the authentic essence of this classical dance form while making it accessible to passionate learners of all ages.",
+            storyImageUrl: "https://placehold.co/600x400/8B0000/FFFFFF?text=Our+Story",
+            founderHeading: "Our Founder & Principal Teacher",
+            founderName: "Guru Smt. Priya Sharma",
+            founderBio: "Guru Smt. Priya Sharma is a distinguished Bharatanatyam exponent and dedicated teacher with over two decades of experience in classical dance. A disciple of renowned gurus, she has dedicated her life to preserving and propagating the authentic traditions of Bharatanatyam.",
+            founderImageUrl: "https://placehold.co/600x400/8B0000/FFFFFF?text=Our+Founder",
+          });
+        }
+
+        const philosophyQuery = query(collection(db, "philosophy"), orderBy("order", "asc"));
+        const philosophySnapshot = await getDocs(philosophyQuery);
+        const philosophyData = philosophySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Philosophy));
+        setPhilosophy(philosophyData.length > 0 ? philosophyData : [
+          { id: '1', icon: 'Heart', title: 'Preservation', description: 'We are committed to preserving the authentic traditions and techniques of Bharatanatyam, ensuring that this ancient art form continues to thrive for future generations.' },
+          { id: '2', icon: 'Users', title: 'Community', description: 'Our academy fosters a supportive community where students of all ages and backgrounds can learn, grow, and celebrate the rich cultural heritage of Indian classical dance.' },
+          { id: '3', icon: 'Theater', title: 'Excellence', description: 'We strive for excellence in every aspect of training, from fundamental techniques to advanced performance skills, maintaining the highest standards of artistic integrity.' },
+          { id: '4', icon: 'Award', title: 'Innovation', description: 'While honoring tradition, we embrace innovative teaching methods and contemporary approaches to make classical dance accessible and engaging for modern learners.' }
+        ]);
+
+      } catch (error) {
+        console.error("Error fetching about page content:", error);
+      }
+      setIsLoading(false);
+    };
+
+    fetchContent();
+  }, []);
+
+  if (isLoading || !pageContent) {
+    return (
+      <div className="flex justify-center items-center h-screen bg-[#8B0000]">
+        <Loader2 className="h-12 w-12 text-white animate-spin" />
+      </div>
+    );
+  }
+
   return (
     <PageTransition>
       <div>
@@ -65,17 +123,12 @@ export default function AboutPage() {
               <div>
                 <TextAnimation type="slide" direction="left" delay={0.2}>
                   <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold mb-4 sm:mb-6 text-white">
-                    <span className="text-yellow-300">Our Story</span>
+                    <span className="text-yellow-300">{pageContent.storyHeading}</span>
                   </h2>
                 </TextAnimation>
                 <TextAnimation type="fade" delay={0.4}>
                   <p className="text-gray-200 mb-4 sm:mb-6 text-sm sm:text-base leading-relaxed">
-                    Founded with a deep reverence for the ancient traditions of Bharatanatyam, our academy emerged from a vision to create a nurturing space where the divine art form could flourish. Our journey began with a simple yet profound mission: to preserve and promote the authentic essence of this classical dance form while making it accessible to passionate learners of all ages.
-                  </p>
-                </TextAnimation>
-                <TextAnimation type="fade" delay={0.6}>
-                  <p className="text-gray-200 mb-6 sm:mb-8 text-sm sm:text-base leading-relaxed">
-                    Over the years, we have grown into a vibrant community of artists, students, and enthusiasts who share a common love for the rich cultural heritage of India. Our academy has become a beacon of artistic excellence, where traditional values meet contemporary learning approaches.
+                    {pageContent.storyContent}
                   </p>
                 </TextAnimation>
                 <Scale delay={0.8}>
@@ -87,7 +140,7 @@ export default function AboutPage() {
               <div>
                 <HoverAnimation effect="lift" tapEffect="scale">
                   <FallbackImage
-                    src={replaceUnsplashUrl("https://images.unsplash.com/photo-1578662996442-48f60103fc96?w=600&h=400&fit=crop&crop=center", "teacher")}
+                    src={pageContent.storyImageUrl}
                     alt="Founder of the dance academy teaching Bharatanatyam"
                     width={600}
                     height={400}
@@ -103,7 +156,7 @@ export default function AboutPage() {
                 <HoverAnimation effect="lift" tapEffect="scale">
                   <div className="relative">
                     <FallbackImage
-                      src={replaceUnsplashUrl("https://images.unsplash.com/photo-1518837695005-2083093ee35b?w=600&h=400&fit=crop&crop=center", "teacher")}
+                      src={pageContent.founderImageUrl}
                       alt="Founder and principal teacher of the academy in traditional Bharatanatyam costume"
                       width={600}
                       height={400}
@@ -118,17 +171,12 @@ export default function AboutPage() {
               <div className="order-1 lg:order-2">
                 <TextAnimation type="slide" direction="right" delay={0.2}>
                   <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold mb-4 sm:mb-6 text-white">
-                    <span className="text-yellow-300">Our Founder & Principal Teacher</span>
+                    <span className="text-yellow-300">{pageContent.founderHeading}</span>
                   </h2>
                 </TextAnimation>
                 <TextAnimation type="fade" delay={0.4}>
                   <p className="text-gray-200 mb-4 sm:mb-6 text-sm sm:text-base leading-relaxed">
-                    <strong>Guru Smt. Priya Sharma</strong> is a distinguished Bharatanatyam exponent and dedicated teacher with over two decades of experience in classical dance. A disciple of renowned gurus, she has dedicated her life to preserving and propagating the authentic traditions of Bharatanatyam.
-                  </p>
-                </TextAnimation>
-                <TextAnimation type="fade" delay={0.6}>
-                  <p className="text-gray-200 mb-6 sm:mb-8 text-sm sm:text-base leading-relaxed">
-                    With a Master's degree in Performing Arts and numerous accolades to her credit, Guru Priya has performed extensively across India and internationally. Her teaching methodology combines traditional rigor with modern pedagogical approaches, making classical dance accessible to students of all ages and backgrounds.
+                    <strong>{pageContent.founderName}</strong> {pageContent.founderBio}
                   </p>
                 </TextAnimation>
 
@@ -157,36 +205,39 @@ export default function AboutPage() {
               </div>
 
               <StaggerContainer className="grid grid-cols-1 md:grid-cols-2 gap-8 sm:gap-10" delay={0.6}>
-                {philosophy.map((item, index) => (
-                  <StaggerItem key={index} animation="slide" direction="up">
-                    <HoverAnimation effect="lift" tapEffect="scale">
-                      <div className="group relative bg-gradient-to-br from-gray-50 to-white rounded-2xl p-6 sm:p-8 border border-gray-100 shadow-lg hover:shadow-xl transition-all duration-300 hover:-translate-y-1">
-                        {/* Background Pattern */}
-                        <div className="absolute inset-0 bg-gradient-to-br from-[#8B0000]/5 to-transparent rounded-2xl opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
-                        
-                        {/* Icon Container */}
-                        <div className="relative z-10 flex items-start gap-4 sm:gap-6">
-                          <div className="bg-gradient-to-br from-[#8B0000] to-[#6B0000] text-white rounded-2xl p-3 sm:p-4 shadow-lg flex-shrink-0">
-                            <item.icon className="h-6 w-6 sm:h-8 sm:w-8" />
+                {philosophy.map((item, index) => {
+                  const Icon = iconMap[item.icon] || Heart;
+                  return (
+                    <StaggerItem key={item.id || index} animation="slide" direction="up">
+                      <HoverAnimation effect="lift" tapEffect="scale">
+                        <div className="group relative bg-gradient-to-br from-gray-50 to-white rounded-2xl p-6 sm:p-8 border border-gray-100 shadow-lg hover:shadow-xl transition-all duration-300 hover:-translate-y-1">
+                          {/* Background Pattern */}
+                          <div className="absolute inset-0 bg-gradient-to-br from-[#8B0000]/5 to-transparent rounded-2xl opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+                          
+                          {/* Icon Container */}
+                          <div className="relative z-10 flex items-start gap-4 sm:gap-6">
+                            <div className="bg-gradient-to-br from-[#8B0000] to-[#6B0000] text-white rounded-2xl p-3 sm:p-4 shadow-lg flex-shrink-0">
+                              <Icon className="h-6 w-6 sm:h-8 sm:w-8" />
+                            </div>
+                            
+                            {/* Content */}
+                            <div className="flex-1">
+                              <h3 className="text-xl sm:text-2xl font-bold mb-3 text-[#8B0000] group-hover:text-[#6B0000] transition-colors">
+                                {item.title}
+                              </h3>
+                              <p className="text-gray-600 text-sm sm:text-base leading-relaxed">
+                                {item.description}
+                              </p>
+                            </div>
                           </div>
                           
-                          {/* Content */}
-                          <div className="flex-1">
-                            <h3 className="text-xl sm:text-2xl font-bold mb-3 text-[#8B0000] group-hover:text-[#6B0000] transition-colors">
-                              {item.title}
-                            </h3>
-                            <p className="text-gray-600 text-sm sm:text-base leading-relaxed">
-                              {item.description}
-                            </p>
-                          </div>
+                          {/* Decorative Element */}
+                          <div className="absolute top-4 right-4 w-2 h-2 bg-yellow-600 rounded-full opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
                         </div>
-                        
-                        {/* Decorative Element */}
-                        <div className="absolute top-4 right-4 w-2 h-2 bg-yellow-600 rounded-full opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
-                      </div>
-                    </HoverAnimation>
-                  </StaggerItem>
-                ))}
+                      </HoverAnimation>
+                    </StaggerItem>
+                  );
+                })}
               </StaggerContainer>
               
               {/* Bottom Decoration */}
@@ -223,3 +274,5 @@ export default function AboutPage() {
     </PageTransition>
   );
 }
+
+    
